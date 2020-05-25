@@ -1,0 +1,32 @@
+- name: Make service file
+  template:
+    src: systemd.service
+    dest: '/etc/systemd/system/{{ item.name }}{{ "@" if item.templated | default(true) else ""}}.service'
+  vars:
+    description: '{{ item.description | default(item.name) }}'
+    exec_start: '{{ item.exec_start | default("/usr/bin/" + item.name)}}'
+    templated: '{{ item.templated | default(false) }}'
+    after: '{{ item.after | default("network.target") }}'
+  with_items: "{{ sd_autostart }}" 
+
+- name: start and enable not templated services
+  systemd:
+    name: '{{ item.name }}.service'
+    state: started
+    enabled: true
+  when: 
+    - not ( item.templated | default(true))
+    - item.autostart | default(true)
+  with_items: "{{ sd_autostart }}"
+
+- name: start and enable templated services
+  systemd:
+    name: "{{ item.0.name + '@' + item.1 }}.service"
+    state: started
+    enabled: true
+  when: 
+    - item.0.templated | default(true)
+    - item.0.autostart | default(true)
+  with_subelements: 
+    - "{{ sd_autostart | selectattr('subitems', 'defined') | list }}"
+    - subitems

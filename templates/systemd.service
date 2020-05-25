@@ -1,0 +1,11 @@
+[Unit]
+Description={{ description }}
+After={{ after }}
+
+[Service]
+Type=oneshot
+ExecStart={{ exec_start }}
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target
